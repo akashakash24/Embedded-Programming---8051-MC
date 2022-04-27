@@ -1,0 +1,58 @@
+/*This program seperates the given 5 nos. into positive number and negative no.
+Positive nos. are stored from the location 0x40
+Negative nos. are stored from the location 0x50 */
+
+		org 0000h
+
+// Storing 5 signed nos. in data memory location 0x30
+		mov 30h,#0x00
+		mov 31h,#0xfc
+		mov 32h,#0xfd
+		mov 33h,#0xfe
+		mov 34h,#0xff
+
+// checking for positive numbers 
+		mov r0,#30h		 	// given data location
+		mov r1,#40h			// location for storing positive nos.
+		mov r2,#5h			// total nos to be sorted
+loop11:	mov a,@r0		 	// move the nos. to acc. to check for +ve or -ve 
+		subb a,#0x7f		// checking for signed nos.
+		jc loop1			// identifying +ve nos.
+		inc r0
+		djnz r2,loop11
+		jmp loop2
+
+// storing +ve nos. from 0x40
+loop1:	mov a,@r0
+		mov @r1,a				
+		inc r1
+		inc r0
+		inc r3		// total no. of +ve nos.
+		djnz r2,loop11
+		jmp loop2
+
+
+// checking for negative numbers 
+loop2:	mov r0,#30h		 	// given data location
+		mov r1,#50h			// location for storing positive nos.
+		mov r2,#5h			// no of data (n-1)
+loop12:	mov a,@r0		 	// move the nos. to acc. to check for +ve or -ve 
+		subb a,#0x7f		// checking for signed nos.
+		jnc loop3			// identifying +ve nos.
+		inc r0
+		djnz r2,loop12
+		jmp loop4
+
+// storing the -ve nos. from 0x50
+loop3:	mov a,@r0
+		mov @r1,a				
+		inc r1
+		inc r0
+		inc r4		// total no. of -ve nos. 
+		djnz r2,loop12
+		jmp loop4
+
+loop4:	sjmp loop4
+
+
+

@@ -1,0 +1,221 @@
+/*This program sorts the signed nos. in ascending order using the following steps:
+1. Stores the five signed numbers from Data Memory (DM) locations 0x30 to 0x34
+2. Checks for positive numbers  
+3. Stores  the +ve nos from the location 0x40 ( No. of +ve nos. are in r3)
+4. Checks for negative numbers 
+5. Stores the -ve nos from the location 0x50  ( No. of -ve nos. are in r4) 
+6. Sorts the +ve nos. from 0x40 in ascending order
+7. Sorts the -ve nos. from 0x50 in decending order
+8. Check the total no. of +ve nos. If it is equal to 5 stop execution ( because 5 +ve nos are already sorted from 0x40). If not
+9. Copy the sorted -ve nos. from its location (0x5x) and paste it from 0x40 (because it is ascending order sorting) to merge both sorted +ve and -ve nos.
+
+*/		
+
+		org 0000h			// starting location of the program
+
+//1. Storing 5 signed nos. from DM locations from 0x30 to 0x34
+
+		mov 30h,#1		// First no.(+ve/-ve number) to be sorted is stored in DM location 0x30
+		mov 31h,#0		// Second no.(+ve/-ve number) to be sorted is stored in DM location 0x31
+		mov 32h,#0		// Third  no.(+ve/-ve number) to be sorted is stored in DM location 0x32
+		mov 33h,#0		// Fourth no.(+ve/-ve number) to be sorted is stored in DM location 0x33
+		mov 34h,#-1			// Fifth no.(+ve/-ve number) to be sorted is stored in DM location 0x34
+
+//2. Checking for positive numbers 
+		mov r0,#30h		 	// pointer (register r0) to point first location 
+		mov r1,#40h			// pointer (register r1) to store +ve numbers
+		mov r2,#5h			// total nos. to be checked (register r2=5)
+loop11:	mov a,@r0		 	// move the nos. to acc. to check for +ve or -ve 
+		cjne @r0,#0x7f, pos // !=127, check for signed nos. 
+		sjmp loop1			// If equal to 127, then jump to loop1 to store it in +ve no. list.
+pos:	subb a,#0x7f		// checking for signed nos. 					
+		jc loop1			// If carry then it is a +ve no. jump to loop 1 to store +ve nos from 0x40 
+
+
+		inc r0				// increment the pointer to check the next no.
+		djnz r2,loop11		// decrement r2, if not zero jump to check the next no. 
+		jmp loop2			// Similarly jump to loop2 to check the -ve nos. 
+
+
+//3. Storing +ve nos. from 0x40
+loop1:	mov a,@r0			 // copy the data from DM location pointed by r0 to a
+		mov @r1,a			 // paste the data into the DM location pointed by r1			
+		inc r1				 // increment the pointer of +ve number location
+		inc r0				 // increment the pointer of source location	
+		inc r3				 //  increment r3 to count the total no. of +ve nos.
+		djnz r2,loop11		 // decrement r2, if not zero jump to check the next no.
+
+
+
+//4. Checking for negative numbers 
+loop2:	mov r0,#30h		 	// pointer (r0) to point first location
+		mov r1,#50h			// pointer (r1) to store +ve numbers.
+		mov r2,#5h			// total nos. to be checked ( register r2=5)
+loop12:	mov a,@r0		 	// move the nos. to acc. to check for +ve or -ve 
+		cjne @r0,#0x7f, pos1// !=127, it may be +ve / -ve no. hence go to pos1 for further checking 
+		sjmp l2				// If =127, jump to l2 to check the next -ve no.
+pos1:	subb a,#0x7f		// checking for signed nos.
+		jnc loop3			// If no carry then it is a -ve no. jump to loop 3 to store -ve nos. from 0x50
+		 
+l2:		inc r0				// increment pointer to check the next no. 
+		djnz r2,loop12		// decrement r2, if not zero jump to check the next no. 
+		jmp nine			// Jump to label nine, to start the sorting process
+
+//5. Storing -ve nos. from 0x50
+loop3:	mov a,@r0			// copy the data from the DM location pointed by r0 to a
+		mov @r1,a			// paste the data into to DM location pointed by r1	
+		inc r1				// increment the pointer of -ve no. location
+		inc r0				// increment the pointer of +ve no. location
+		inc r4				// increment r4 to count the total no. of -ve nos. 
+		djnz r2,loop12		// decrement r2, if not zero jump to check the next no.
+
+
+//////////////////////////////
+// Sorting Algorithm Starts //
+//////////////////////////////
+
+
+//6.  Sorting positive nos. in ascending order from 0x40 to 0x44
+
+		mov r2,#05h		 // total nos. to be sorted is in r2
+nine:	mov r0,#40h		 // First location address is moved to r0
+		mov r1,#41h		 // Second location address is moved to r1
+		mov a,@r0		 // move the content of the memory location pointed by r0 to Acc.
+		cjne a,41h,one 	 // compare first and 2nd nos. if not equal jump to one 
+		sjmp two		 // jump to location labeled as two
+		 			
+/*FIRST ITERATION*/
+// To sort it in ding order, if no carry, exchange the contents for ascending order
+one:	jc two			// if there is a carry the nos. are in ascending order hence jump to two if no carry exchange nos. 
+		xch a,@r1		// exchange accumulator with byte variable pointed by r1
+		mov @r0,a		// move the content of a to location pointed by r0. 
+ 
+two:	inc r0		  		// increment the pointer to check the second no.
+		inc r1		   		// increment the pointer to check the third no. 
+		mov a,@r0			// move the content of the memory location pointed by r0 to Acc.
+		cjne a,42h,three	// compare second and third no. fi not equal jump to three 
+		sjmp four			// jump to location labeled as four
+
+
+
+/*SECOND ITERATION*/
+three:	jc four				 
+		xch a,@r1
+		mov @r0,a
+	
+four:	inc r0
+		inc r1
+		mov a,@r0
+		cjne a,43h,five
+		sjmp six
+
+
+
+
+/*THIRD ITERATION*/
+five:	jc six
+		xch a,@r1
+		mov @r0,a
+
+
+six: 	inc r0
+		inc r1
+		mov a,@r0
+		cjne a,44h,seven
+		sjmp eight
+
+
+
+/*FOURTH ITERATION*/
+seven:	jc eight
+		xch a,@r1
+		mov @r0,a
+
+eight: djnz r2,nine
+
+
+
+//7. Sorting negative nos. in ascending order from 0x50 to 0x54
+
+		mov r2,#05h		  
+nine1:	mov r0,#50h		 
+		mov r1,#51h		 
+		mov a,@r0		 
+		cjne a,51h,one1 
+		sjmp two1		
+			
+/*FIRST ITERATION*/
+// To sort it in ding order, if no carry, exchange the contents for ascending order
+one1:	jc two1
+		xch a,@r1		
+		mov @r0,a		
+ 
+two1:	inc r0		   
+		inc r1		   
+		mov a,@r0
+		cjne a,52h,three1
+		sjmp four1
+
+
+
+/*SECOND ITERATION*/
+three1:	jc four1
+		xch a,@r1
+		mov @r0,a
+	
+four1:	inc r0
+		inc r1
+		mov a,@r0
+		cjne a,53h,five1
+		sjmp six1
+
+
+
+
+/*THIRD ITERATION*/
+five1:	jc six1
+		xch a,@r1
+		mov @r0,a
+
+
+six1: 	inc r0
+		inc r1
+		mov a,@r0
+		cjne a,54h,seven1
+		sjmp eight1
+
+
+
+/*FOURTH ITERATION*/
+seven1:	jc eight1
+		xch a,@r1
+		mov @r0,a
+
+eight1: djnz r2,nine1
+
+// 8. Check the total no. of +ve nos. If it is equal to 5 stop execution ( because 5 +ve nos are already sorted from 0x40)
+
+		clr c					// clear the carry flag	(because subb uses previous carry)			
+		mov r1,#0x40			// pointer to store the starting address (r1)
+		mov a,r4				// take the total no. of -ve nos. from r4 to acc.
+		mov r6,a				// move total no of -ve nos. to r6
+		mov a,#0x05				// move the total no. to acc.
+		subb a,r4				// subtract negative nos. from total no. to get no. of +ve nos.(Now Acc has no. of +ve nos.)
+		cjne a,#0x05, cont		// If total +ve no. is not equal to 5 then jump to cont to merge both -ve and +ve nos from 0x40
+		jmp here				// If total +ve no. is equal to 5, then stop execution, because +ve nos are already in 0x40 to 0x44
+
+
+//9. Copy the sorted -ve nos. from its location (0x5x) and paste it from 0x40 (because it is ascending order sorting) to merge both sorted +ve and -ve nos.
+
+cont:	add a,#0x50				// Acc. has no. of +ve nos. When added with 50 the first location of the -ve no. is identified. 								
+		mov r0,a				// move the starting address of -ve no. to pointer r0.	
+loop20:	mov a,@r0				// copy from the pointed location
+		mov @r1,a				// paste it in the destination location pointed by r1
+		inc r0					// increment the source pointer
+		inc r1					// increment the destination pointer
+		djnz r6,loop20			// repeat this loop20, until all -ve nos. are copied to destination location.
+
+here:	sjmp here				// stop the execution
+
+
+
